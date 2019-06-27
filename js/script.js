@@ -1,15 +1,73 @@
 "use strict";
-let buttons = document.querySelectorAll(".player-move"),
+
+const buttons = document.querySelectorAll(".player-move"),
+  modalEndGame = document.getElementById("modal-end-game"),
   newGameButton = document.getElementById("newGame"),
   outputContainer = document.getElementById("output"),
-  resultContainer = document.getElementById("result"),
-  nextClick = false,
-  params = {
+  resultContainer = document.getElementById("result");
+let defaultParams = {
     rounds: 0,
     score: { player: 0, computer: 0 },
     maxScore: 10,
     gameEnd: false
-  };
+  },
+  params = { ...defaultParams };
+
+var hideModals = function() {
+  let allModal = document.querySelectorAll(".modal");
+  allModal.forEach(function(modal) {
+    modal.classList.remove("show");
+  });
+};
+
+var addClassShow = function(hash) {
+  document.querySelector(hash).classList.add("show");
+};
+
+var showModal = function(event, modalHash) {
+  hideModals();
+  if (!modalHash) modalHash = event.target.hash;
+  addClassShow(modalHash);
+  if (event) event.preventDefault();
+  addClassShow("#modal-overlay");
+};
+
+// Mimo, że obecnie mamy tylko jeden link, stosujemy kod dla wielu linków. W ten sposób nie będzie trzeba go zmieniać, kiedy zechcemy mieć więcej linków lub guzików otwierających modale
+
+var modalLinks = document.querySelectorAll(".show-modal");
+
+for (var i = 0; i < modalLinks.length; i++) {
+  modalLinks[i].addEventListener("click", showModal);
+}
+
+// Dodajemy też funkcję zamykającą modal, oraz przywiązujemy ją do kliknięć na elemencie z klasą "close".
+
+var hideModalOverlay = function(event) {
+  event.preventDefault();
+  document.querySelector("#modal-overlay").classList.remove("show");
+};
+
+var closeButtons = document.querySelectorAll(".modal .close");
+
+for (var i = 0; i < closeButtons.length; i++) {
+  closeButtons[i].addEventListener("click", hideModalOverlay);
+}
+
+// Dobrą praktyką jest również umożliwianie zamykania modala poprzez kliknięcie w overlay.
+
+document
+  .querySelector("#modal-overlay")
+  .addEventListener("click", hideModalOverlay);
+
+// Musimy jednak pamiętać, aby zablokować propagację kliknięć z samego modala - inaczej każde kliknięcie wewnątrz modala również zamykałoby go.
+
+var modals = document.querySelectorAll(".modal");
+
+for (var i = 0; i < modals.length; i++) {
+  modals[i].addEventListener("click", function(event) {
+    event.stopPropagation();
+  });
+}
 
 function callbackMove(event) {
   event.preventDefault();
@@ -36,8 +94,9 @@ function removeEventFromButtons() {
   }
 }
 function resetValue() {
-  nextClick = false;
-  params.score = { player: 0, computer: 0 };
+  let defaultScore = defaultParams.score;
+  let score = { ...defaultScore };
+  params = { ...defaultParams, score };
 }
 function toggleClassDisable() {
   for (var i = 0; i < buttons.length; i++) {
@@ -56,7 +115,7 @@ function getRandomNumber(min, max) {
 function getResult(winner, playerMove, computerMove) {
   let output;
 
-  if (nextClick) {
+  if (params.gameEnd) {
     outputContainer.innerHTML = "Game over, please press the new game button!";
     return;
   }
@@ -75,14 +134,16 @@ function getResult(winner, playerMove, computerMove) {
 
   outputContainer.innerHTML = output;
   resultContainer.innerHTML =
-    params.score.player + " - " + params.score.computer;
+    params.score.player +
+    " - " +
+    params.score.computer +
+    "<br> Liczba rund: " +
+    params.rounds;
 
   if (params.score.player >= params.maxScore) {
     endGame("player");
-    nextClick = true;
   } else if (params.score.computer >= params.maxScore) {
     endGame("computer");
-    nextClick = true;
   }
 }
 
@@ -110,11 +171,10 @@ function checkRoundWinner(playerPick, computerPick) {
 }
 
 function playerMove(Pick) {
-  let outputContainer = document.getElementById("output"),
-    resultContainer = document.getElementById("result"),
-    computerMove = getComputerPick(),
-    winner = checkRoundWinner(Pick, computerMove),
-    result = getResult(winner, Pick, computerMove);
+  let computerMove = getComputerPick(),
+    winner = checkRoundWinner(Pick, computerMove);
+  params.rounds++;
+  let result = getResult(winner, Pick, computerMove);
 }
 
 function startGame() {
@@ -136,10 +196,19 @@ function resetGame() {
 }
 
 function endGame(winner) {
-  if (winner == "player")
+  const header = document.querySelector("#modal-end-game header");
+
+  if (winner == "player") {
     outputContainer.innerHTML = "YOU WON THE ENTIRE GAME!!!";
-  else outputContainer.innerHTML = "YOU LOST THE ENTIRE GAME!!!";
+    header.innerHTML = "YOU WON THE ENTIRE GAME!!!";
+  } else {
+    outputContainer.innerHTML = "YOU LOST THE ENTIRE GAME!!!";
+    header.innerHTML = "YOU WON THE ENTIRE GAME!!!";
+  }
+  // modalEndGame.appendChild(header);
+  showModal(null, "#modal-end-game");
   toggleClassDisable();
+  params.gameEnd = true;
 }
 
 newGameButton.onclick = resetGame;
