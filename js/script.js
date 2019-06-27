@@ -1,7 +1,5 @@
 "use strict";
-let rockButton = document.getElementById("rock"),
-  scissorsButton = document.getElementById("scissors"),
-  paperButton = document.getElementById("paper"),
+let buttons = document.querySelectorAll(".player-move"),
   newGameButton = document.getElementById("newGame"),
   outputContainer = document.getElementById("output"),
   resultContainer = document.getElementById("result"),
@@ -9,30 +7,37 @@ let rockButton = document.getElementById("rock"),
   score = { player: 0, computer: 0 },
   maxScore = 10;
 
-function callbackRock() {
-  playerMove("rock");
-}
-function callbackScissors() {
-  playerMove("scissors");
-}
-function callbackPaper() {
-  playerMove("paper");
+function callbackMove(event) {
+  event.preventDefault();
+  let move = event.target.getAttribute("data-move");
+
+  playerMove(move);
 }
 
+function addEventToButtons() {
+  for (var i = 0; i < buttons.length; i++) {
+    var self = buttons[i];
+
+    self.addEventListener("click", callbackMove);
+  }
+}
+function removeEventFromButtons() {
+  for (var i = 0; i < buttons.length; i++) {
+    var self = buttons[i];
+
+    self.removeEventListener("click", callbackMove);
+  }
+}
 function resetValue() {
   nextClick = false;
   score = { player: 0, computer: 0 };
 }
-function addClassEndGame() {
-  rockButton.classList.add("end-game");
-  scissorsButton.classList.add("end-game");
-  paperButton.classList.add("end-game");
-}
+function toggleClassDisable() {
+  for (var i = 0; i < buttons.length; i++) {
+    var self = buttons[i];
 
-function removeClassEndGame() {
-  rockButton.classList.remove("end-game");
-  scissorsButton.classList.remove("end-game");
-  paperButton.classList.remove("end-game");
+    self.classList.toggle("disable");
+  }
 }
 
 function getRandomNumber(min, max) {
@@ -105,19 +110,15 @@ function playerMove(Pick) {
 }
 
 function startGame() {
-  removeClassEndGame();
+  toggleClassDisable();
   resetValue();
   let toHowMany = prompt("Enter what result we play", "10");
   if (Number.isInteger(parseInt(toHowMany))) maxScore = parseInt(toHowMany);
-  rockButton.addEventListener("click", callbackRock);
-  scissorsButton.addEventListener("click", callbackScissors);
-  paperButton.addEventListener("click", callbackPaper);
+  addEventToButtons();
 }
 
 function resetGame() {
-  rockButton.removeEventListener("click", callbackRock);
-  scissorsButton.removeEventListener("click", callbackScissors);
-  paperButton.removeEventListener("click", callbackPaper);
+  removeEventFromButtons();
 
   outputContainer.innerHTML = "Go!!";
   resultContainer.innerHTML = "";
@@ -129,7 +130,7 @@ function endGame(winner) {
   if (winner == "player")
     outputContainer.innerHTML = "YOU WON THE ENTIRE GAME!!!";
   else outputContainer.innerHTML = "YOU LOST THE ENTIRE GAME!!!";
-  addClassEndGame();
+  toggleClassDisable();
 }
 
 newGameButton.onclick = resetGame;

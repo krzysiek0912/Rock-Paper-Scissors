@@ -1,11 +1,11 @@
 body { padding: 10px; text-align: center; }
 
-#result, #output { font-size: 25px; lline-height: 40px; padding: 20px; }
+#result, #output { font-size: 25px; line-height: 40px; padding: 20px; }
 
-button { display: inline-block; padding: 11px 50px; max-width: 100%; font-size: 16px; font-weight: 600; text-align: center; white-space: nowrap; vertical-align: middle; color: #fff; background-color: #02ac46; border: 2px solid #02ac46; border-radius: 4px; transition: color .3s, background-color .3s; cursor: pointer; outline: 0 !important; text-decoration: none; -ms-touch-action: manipulation; touch-action: manipulation; -webkit-user-select: none; -moz-user-select: none; -ms-user-select: none; user-select: none; }
+button { display: inline-block; padding: 11px 50px; max-width: 100%; font-size: 16px; font-weight: 600; text-align: center; white-space: nowrap; vertical-align: middle; color: #fff; background-color: #02ac46; border: 2px solid #02ac46; border-radius: 4px; transition: color 0.3s, background-color 0.3s; cursor: pointer; outline: 0 !important; text-decoration: none; -ms-touch-action: manipulation; touch-action: manipulation; -webkit-user-select: none; -moz-user-select: none; -ms-user-select: none; user-select: none; }
 
 button:hover, button:active { color: #02ac46; background-color: #fff; }
 
-button.end-game { border: #393939; opacity: 0.5; color: dark; background-color: #393939; }
+button.disable { border: #393939; opacity: 0.5; color: dark; background-color: #393939; }
 
-button.end-game:hover, button.end-game:active { color: dark; background-color: #393939; }
+button.disable:hover, button.disable:active { color: dark; background-color: #393939; }
