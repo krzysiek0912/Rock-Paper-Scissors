@@ -4,8 +4,12 @@ let buttons = document.querySelectorAll(".player-move"),
   outputContainer = document.getElementById("output"),
   resultContainer = document.getElementById("result"),
   nextClick = false,
-  score = { player: 0, computer: 0 },
-  maxScore = 10;
+  params = {
+    rounds: 0,
+    score: { player: 0, computer: 0 },
+    maxScore: 10,
+    gameEnd: false
+  };
 
 function callbackMove(event) {
   event.preventDefault();
@@ -14,11 +18,14 @@ function callbackMove(event) {
   playerMove(move);
 }
 
-function addEventToButtons() {
+function EventToButtons(remove) {
   for (var i = 0; i < buttons.length; i++) {
     var self = buttons[i];
-
-    self.addEventListener("click", callbackMove);
+    if (remove) {
+      self.removeEventListener("click", callbackMove);
+    } else {
+      self.addEventListener("click", callbackMove);
+    }
   }
 }
 function removeEventFromButtons() {
@@ -30,7 +37,7 @@ function removeEventFromButtons() {
 }
 function resetValue() {
   nextClick = false;
-  score = { player: 0, computer: 0 };
+  params.score = { player: 0, computer: 0 };
 }
 function toggleClassDisable() {
   for (var i = 0; i < buttons.length; i++) {
@@ -56,10 +63,10 @@ function getResult(winner, playerMove, computerMove) {
 
   if (winner == "player") {
     output = "YOU WON:";
-    score.player += 1;
+    params.score.player += 1;
   } else if (winner == "computer") {
     output = "COMPUTER WON:";
-    score.computer += 1;
+    params.score.computer += 1;
   } else {
     output = "DRAW:";
   }
@@ -67,12 +74,13 @@ function getResult(winner, playerMove, computerMove) {
   output += " you played " + playerMove + ", computer played " + computerMove;
 
   outputContainer.innerHTML = output;
-  resultContainer.innerHTML = score.player + " - " + score.computer;
+  resultContainer.innerHTML =
+    params.score.player + " - " + params.score.computer;
 
-  if (score.player >= maxScore) {
+  if (params.score.player >= params.maxScore) {
     endGame("player");
     nextClick = true;
-  } else if (score.computer >= maxScore) {
+  } else if (params.score.computer >= params.maxScore) {
     endGame("computer");
     nextClick = true;
   }
@@ -113,12 +121,13 @@ function startGame() {
   toggleClassDisable();
   resetValue();
   let toHowMany = prompt("Enter what result we play", "10");
-  if (Number.isInteger(parseInt(toHowMany))) maxScore = parseInt(toHowMany);
-  addEventToButtons();
+  if (Number.isInteger(parseInt(toHowMany)))
+    params.maxScore = parseInt(toHowMany);
+  EventToButtons();
 }
 
 function resetGame() {
-  removeEventFromButtons();
+  EventToButtons(true);
 
   outputContainer.innerHTML = "Go!!";
   resultContainer.innerHTML = "";
