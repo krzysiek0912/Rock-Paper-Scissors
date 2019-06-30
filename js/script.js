@@ -4,12 +4,14 @@ const buttons = document.querySelectorAll(".player-move"),
   modalEndGame = document.getElementById("modal-end-game"),
   newGameButton = document.getElementById("newGame"),
   outputContainer = document.getElementById("output"),
-  resultContainer = document.getElementById("result");
+  resultContainer = document.getElementById("result"),
+  modals = document.querySelectorAll(".modal");
 let defaultParams = {
     rounds: 0,
     score: { player: 0, computer: 0 },
     maxScore: 10,
-    gameEnd: false
+    gameEnd: false,
+    progress: []
   },
   params = { ...defaultParams };
 
@@ -61,14 +63,55 @@ document
 
 // Musimy jednak pamiętać, aby zablokować propagację kliknięć z samego modala - inaczej każde kliknięcie wewnątrz modala również zamykałoby go.
 
-var modals = document.querySelectorAll(".modal");
-
 for (var i = 0; i < modals.length; i++) {
   modals[i].addEventListener("click", function(event) {
     event.stopPropagation();
   });
 }
 
+function createTableWithScore() {
+  var tbody = document.querySelector(".table tbody");
+
+  let progress = params.progress,
+    length = progress.length;
+  console.log(progress);
+  for (var i = 0; i <= length; i++) {
+    let trow = document.createElement("tr");
+    // console.log(progress[i]);
+    let progressObj = progress[i];
+
+    for (var round in progressObj) {
+      // console.log(round);
+
+      let td = document.createElement("td");
+
+      td.innerHTML = progressObj[round];
+
+      trow.appendChild(td);
+    }
+    tbody.appendChild(trow);
+  }
+  // var td = document.createElement("td");
+  // tbl.style.width = "100%";
+  // tbl.setAttribute("border", "1");
+  // var tbdy = document.createElement("tbody");
+  // for (var i = 0; i < params.progress.length; i++) {
+  //   var tr = document.createElement("tr");
+  //   for (var j = 0; j < 2; j++) {
+  //     if (i == 2 && j == 1) {
+  //       break;
+  //     } else {
+  //       var td = document.createElement("td");
+  //       td.appendChild(document.createTextNode("asdasdas \u0020"));
+  //       i == 1 && j == 1 ? td.setAttribute("rowSpan", "2") : null;
+  //       tr.appendChild(td);
+  //     }
+  //   }
+  //   tbdy.appendChild(tr);
+  // }
+  // tbl.appendChild(tbdy);
+  return tbody;
+}
 function callbackMove(event) {
   event.preventDefault();
   let move = event.target.getAttribute("data-move");
@@ -96,7 +139,7 @@ function removeEventFromButtons() {
 function resetValue() {
   let defaultScore = defaultParams.score;
   let score = { ...defaultScore };
-  params = { ...defaultParams, score };
+  params = { ...defaultParams, score, progress: [] };
 }
 function toggleClassDisable() {
   for (var i = 0; i < buttons.length; i++) {
@@ -114,7 +157,6 @@ function getRandomNumber(min, max) {
 
 function getResult(winner, playerMove, computerMove) {
   let output;
-
   if (params.gameEnd) {
     outputContainer.innerHTML = "Game over, please press the new game button!";
     return;
@@ -145,6 +187,7 @@ function getResult(winner, playerMove, computerMove) {
   } else if (params.score.computer >= params.maxScore) {
     endGame("computer");
   }
+  return params.score.player + " - " + params.score.computer;
 }
 
 function getComputerPick() {
@@ -171,10 +214,21 @@ function checkRoundWinner(playerPick, computerPick) {
 }
 
 function playerMove(Pick) {
-  let computerMove = getComputerPick(),
-    winner = checkRoundWinner(Pick, computerMove);
+  let computerMove = getComputerPick();
+
   params.rounds++;
-  let result = getResult(winner, Pick, computerMove);
+
+  let winner = checkRoundWinner(Pick, computerMove),
+    result = getResult(winner, Pick, computerMove);
+  console.log(result);
+  params.progress.push({
+    round: params.rounds,
+    playerMove: Pick,
+    computerMove,
+    winner,
+    result
+  });
+  console.log(params.progress);
 }
 
 function startGame() {
@@ -197,6 +251,7 @@ function resetGame() {
 
 function endGame(winner) {
   const header = document.querySelector("#modal-end-game header");
+  const content = document.querySelector("#modal-end-game .content");
 
   if (winner == "player") {
     outputContainer.innerHTML = "YOU WON THE ENTIRE GAME!!!";
@@ -205,10 +260,15 @@ function endGame(winner) {
     outputContainer.innerHTML = "YOU LOST THE ENTIRE GAME!!!";
     header.innerHTML = "YOU WON THE ENTIRE GAME!!!";
   }
-  // modalEndGame.appendChild(header);
-  showModal(null, "#modal-end-game");
+
   toggleClassDisable();
   params.gameEnd = true;
+
+  let tableBody = createTableWithScore();
+  var table = document.querySelector(".table table");
+  // table.innerHTML = "";
+  table.appendChild(tableBody);
+  showModal(null, "#modal-end-game");
 }
 
 newGameButton.onclick = resetGame;
