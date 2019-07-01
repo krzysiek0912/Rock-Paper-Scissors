@@ -3,65 +3,65 @@
 const buttons = document.querySelectorAll(".player-move"),
   modalEndGame = document.getElementById("modal-end-game"),
   newGameButton = document.getElementById("newGame"),
+  startGameButton = document.getElementById("startGame"),
   outputContainer = document.getElementById("output"),
   resultContainer = document.getElementById("result"),
-  modals = document.querySelectorAll(".modal");
-let defaultParams = {
+  inputName = document.getElementById("playerName"),
+  inputMaxScore = document.getElementById("maxScore"),
+  modals = document.querySelectorAll(".modal"),
+  defaultParams = {
+    playerName: "",
     rounds: 0,
     score: { player: 0, computer: 0 },
     maxScore: 10,
     gameEnd: false,
-    progress: []
-  },
-  params = { ...defaultParams };
+    progress: [],
+    errors: []
+  };
 
-var hideModals = function() {
-  let allModal = document.querySelectorAll(".modal");
+let params = { ...defaultParams };
+
+function hideModals() {
+  const allModal = document.querySelectorAll(".modal");
   allModal.forEach(function(modal) {
     modal.classList.remove("show");
   });
-};
+  document.querySelector("#modal-overlay").classList.remove("show");
+}
 
-var addClassShow = function(hash) {
+function addClassShow(hash) {
   document.querySelector(hash).classList.add("show");
-};
+}
 
-var showModal = function(event, modalHash) {
+function showModal(event, modalHash) {
   hideModals();
+
   if (!modalHash) modalHash = event.target.hash;
   addClassShow(modalHash);
   if (event) event.preventDefault();
   addClassShow("#modal-overlay");
-};
+}
 
-// Mimo, że obecnie mamy tylko jeden link, stosujemy kod dla wielu linków. W ten sposób nie będzie trzeba go zmieniać, kiedy zechcemy mieć więcej linków lub guzików otwierających modale
-
-var modalLinks = document.querySelectorAll(".show-modal");
+const modalLinks = document.querySelectorAll(".show-modal");
 
 for (var i = 0; i < modalLinks.length; i++) {
   modalLinks[i].addEventListener("click", showModal);
 }
 
-// Dodajemy też funkcję zamykającą modal, oraz przywiązujemy ją do kliknięć na elemencie z klasą "close".
-
-var hideModalOverlay = function(event) {
+function hideModalOverlay(event) {
   event.preventDefault();
   document.querySelector("#modal-overlay").classList.remove("show");
-};
+}
 
-var closeButtons = document.querySelectorAll(".modal .close");
+const closeButtons = document.querySelectorAll(".modal .close");
 
 for (var i = 0; i < closeButtons.length; i++) {
   closeButtons[i].addEventListener("click", hideModalOverlay);
 }
 
-// Dobrą praktyką jest również umożliwianie zamykania modala poprzez kliknięcie w overlay.
-
 document
   .querySelector("#modal-overlay")
   .addEventListener("click", hideModalOverlay);
-
-// Musimy jednak pamiętać, aby zablokować propagację kliknięć z samego modala - inaczej każde kliknięcie wewnątrz modala również zamykałoby go.
 
 for (var i = 0; i < modals.length; i++) {
   modals[i].addEventListener("click", function(event) {
@@ -69,49 +69,40 @@ for (var i = 0; i < modals.length; i++) {
   });
 }
 
-function createTableWithScore() {
-  var tbody = document.querySelector(".table tbody");
+function addErrorToModal() {
+  const errorContent = document.querySelector("#modal-error .content");
+  let errors = params.errors;
+  errorContent.innerHTML = "";
 
+  for (var i = 0; i < errors.length; i++) {
+    let para = document.createElement("p");
+    para.innerHTML = errors[i];
+    errorContent.appendChild(para);
+  }
+}
+
+function createTableWithScore() {
+  const tbody = document.querySelector(".table tbody");
+  tbody.innerHTML = "";
   let progress = params.progress,
     length = progress.length;
-  console.log(progress);
+
   for (var i = 0; i <= length; i++) {
     let trow = document.createElement("tr");
-    // console.log(progress[i]);
     let progressObj = progress[i];
 
     for (var round in progressObj) {
-      // console.log(round);
-
       let td = document.createElement("td");
-
       td.innerHTML = progressObj[round];
-
       trow.appendChild(td);
     }
+
     tbody.appendChild(trow);
   }
-  // var td = document.createElement("td");
-  // tbl.style.width = "100%";
-  // tbl.setAttribute("border", "1");
-  // var tbdy = document.createElement("tbody");
-  // for (var i = 0; i < params.progress.length; i++) {
-  //   var tr = document.createElement("tr");
-  //   for (var j = 0; j < 2; j++) {
-  //     if (i == 2 && j == 1) {
-  //       break;
-  //     } else {
-  //       var td = document.createElement("td");
-  //       td.appendChild(document.createTextNode("asdasdas \u0020"));
-  //       i == 1 && j == 1 ? td.setAttribute("rowSpan", "2") : null;
-  //       tr.appendChild(td);
-  //     }
-  //   }
-  //   tbdy.appendChild(tr);
-  // }
-  // tbl.appendChild(tbdy);
+
   return tbody;
 }
+
 function callbackMove(event) {
   event.preventDefault();
   let move = event.target.getAttribute("data-move");
@@ -121,7 +112,7 @@ function callbackMove(event) {
 
 function EventToButtons(remove) {
   for (var i = 0; i < buttons.length; i++) {
-    var self = buttons[i];
+    let self = buttons[i];
     if (remove) {
       self.removeEventListener("click", callbackMove);
     } else {
@@ -129,22 +120,16 @@ function EventToButtons(remove) {
     }
   }
 }
-function removeEventFromButtons() {
-  for (var i = 0; i < buttons.length; i++) {
-    var self = buttons[i];
 
-    self.removeEventListener("click", callbackMove);
-  }
-}
 function resetValue() {
   let defaultScore = defaultParams.score;
   let score = { ...defaultScore };
-  params = { ...defaultParams, score, progress: [] };
+  params = { ...defaultParams, score, progress: [], errors: [] };
 }
+
 function toggleClassDisable() {
   for (var i = 0; i < buttons.length; i++) {
-    var self = buttons[i];
-
+    let self = buttons[i];
     self.classList.toggle("disable");
   }
 }
@@ -155,6 +140,13 @@ function getRandomNumber(min, max) {
   return Math.floor(Math.random() * (max - min)) + min;
 }
 
+function runModalWithTable() {
+  const tableBody = createTableWithScore();
+  const table = document.querySelector(".table table");
+  table.appendChild(tableBody);
+  showModal(null, "#modal-end-game");
+}
+
 function getResult(winner, playerMove, computerMove) {
   let output;
   if (params.gameEnd) {
@@ -163,16 +155,21 @@ function getResult(winner, playerMove, computerMove) {
   }
 
   if (winner == "player") {
-    output = "YOU WON:";
+    output = params.playerName + " WON: ";
     params.score.player += 1;
   } else if (winner == "computer") {
-    output = "COMPUTER WON:";
+    output = "COMPUTER WON: ";
     params.score.computer += 1;
   } else {
-    output = "DRAW:";
+    output = "DRAW: ";
   }
 
-  output += " you played " + playerMove + ", computer played " + computerMove;
+  output +=
+    params.playerName +
+    " played " +
+    playerMove +
+    ", computer played " +
+    computerMove;
 
   outputContainer.innerHTML = output;
   resultContainer.innerHTML =
@@ -220,55 +217,62 @@ function playerMove(Pick) {
 
   let winner = checkRoundWinner(Pick, computerMove),
     result = getResult(winner, Pick, computerMove);
-  console.log(result);
-  params.progress.push({
+  // console.log(result);
+  let roundObj = {
     round: params.rounds,
     playerMove: Pick,
     computerMove,
     winner,
     result
-  });
-  console.log(params.progress);
+  };
+
+  params.progress.push(roundObj);
+  if (params.gameEnd) runModalWithTable();
 }
 
 function startGame() {
-  toggleClassDisable();
   resetValue();
-  let toHowMany = prompt("Enter what result we play", "10");
-  if (Number.isInteger(parseInt(toHowMany)))
+  const toHowMany = inputMaxScore.value,
+    playerName = inputName.value;
+
+  params.playerName = playerName;
+
+  if (Number.isInteger(parseInt(toHowMany)) && toHowMany > 0) {
     params.maxScore = parseInt(toHowMany);
+  } else {
+    params.errors.push("You gave the wrong value");
+    addErrorToModal();
+    showModal(null, "#modal-error");
+    return;
+  }
+
+  toggleClassDisable();
   EventToButtons();
+  hideModals();
 }
 
 function resetGame() {
+  showModal(null, "#modal-new-game");
   EventToButtons(true);
 
   outputContainer.innerHTML = "Go!!";
   resultContainer.innerHTML = "";
-
-  startGame();
 }
 
 function endGame(winner) {
   const header = document.querySelector("#modal-end-game header");
-  const content = document.querySelector("#modal-end-game .content");
 
   if (winner == "player") {
-    outputContainer.innerHTML = "YOU WON THE ENTIRE GAME!!!";
-    header.innerHTML = "YOU WON THE ENTIRE GAME!!!";
+    outputContainer.innerHTML = params.playerName + " WON THE ENTIRE GAME!!!";
+    header.innerHTML = params.playerName + " WON THE ENTIRE GAME!!!";
   } else {
-    outputContainer.innerHTML = "YOU LOST THE ENTIRE GAME!!!";
-    header.innerHTML = "YOU WON THE ENTIRE GAME!!!";
+    outputContainer.innerHTML = params.playerName + " LOST THE ENTIRE GAME!!!";
+    header.innerHTML = params.playerName + " LOST THE ENTIRE GAME!!!";
   }
 
   toggleClassDisable();
   params.gameEnd = true;
-
-  let tableBody = createTableWithScore();
-  var table = document.querySelector(".table table");
-  // table.innerHTML = "";
-  table.appendChild(tableBody);
-  showModal(null, "#modal-end-game");
 }
 
-newGameButton.onclick = resetGame;
+startGameButton.addEventListener("click", startGame);
+newGameButton.addEventListener("click", resetGame);
