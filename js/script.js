@@ -1,6 +1,7 @@
 "use strict";
 
-const buttons = document.querySelectorAll(".player-move"),
+// referencje do html-a
+const buttonsMove = document.querySelectorAll(".player-move"),
   modalEndGame = document.getElementById("modal-end-game"),
   newGameButton = document.getElementById("newGame"),
   startGameButton = document.getElementById("startGame"),
@@ -8,65 +9,35 @@ const buttons = document.querySelectorAll(".player-move"),
   resultContainer = document.getElementById("result"),
   inputName = document.getElementById("playerName"),
   inputMaxScore = document.getElementById("maxScore"),
-  modals = document.querySelectorAll(".modal"),
-  defaultParams = {
-    playerName: "",
-    rounds: 0,
-    score: { player: 0, computer: 0 },
-    maxScore: 10,
-    gameEnd: false,
-    progress: [],
-    errors: []
-  };
+  headerEndGame = document.querySelector("#modal-end-game header");
 
-let params = { ...defaultParams };
+// nasłuchiwacze
+startGameButton.addEventListener("click", startGame);
+newGameButton.addEventListener("click", newGame);
 
-function hideModals() {
-  const allModal = document.querySelectorAll(".modal");
-  allModal.forEach(function(modal) {
-    modal.classList.remove("show");
-  });
-  document.querySelector("#modal-overlay").classList.remove("show");
-}
+// zmienne globalne
+const defaultParams = {
+  rounds: 0,
+  player: {
+    name: "",
+    score: 0
+  },
+  computer: { score: 0 },
+  maxScore: 10,
+  game: {
+    end: false,
+    start: false
+  },
+  progress: [],
+  errors: []
+};
+let params;
 
-function addClassShow(hash) {
-  document.querySelector(hash).classList.add("show");
-}
+startGameButton.addEventListener("click", startGame);
+newGameButton.addEventListener("click", newGame);
 
-function showModal(event, modalHash) {
-  hideModals();
-
-  if (!modalHash) modalHash = event.target.hash;
-  addClassShow(modalHash);
-  if (event) event.preventDefault();
-  addClassShow("#modal-overlay");
-}
-
-const modalLinks = document.querySelectorAll(".show-modal");
-
-for (var i = 0; i < modalLinks.length; i++) {
-  modalLinks[i].addEventListener("click", showModal);
-}
-
-function hideModalOverlay(event) {
-  event.preventDefault();
-  document.querySelector("#modal-overlay").classList.remove("show");
-}
-
-const closeButtons = document.querySelectorAll(".modal .close");
-
-for (var i = 0; i < closeButtons.length; i++) {
-  closeButtons[i].addEventListener("click", hideModalOverlay);
-}
-
-document
-  .querySelector("#modal-overlay")
-  .addEventListener("click", hideModalOverlay);
-
-for (var i = 0; i < modals.length; i++) {
-  modals[i].addEventListener("click", function(event) {
-    event.stopPropagation();
-  });
+function printOutput(text, outputContainer) {
+  outputContainer.innerHTML = text;
 }
 
 function addErrorToModal() {
@@ -82,12 +53,23 @@ function addErrorToModal() {
 }
 
 function createTableWithScore() {
-  const tbody = document.querySelector(".table tbody");
-  tbody.innerHTML = "";
-  let progress = params.progress,
-    length = progress.length;
+  const theadText = ["Round", "Player", "Computer", "Winner", "Result"];
 
-  for (var i = 0; i <= length; i++) {
+  let table = document.createElement("table"),
+    thead = document.createElement("thead"),
+    tbody = document.createElement("tbody"),
+    trow = document.createElement("tr");
+
+  theadText.forEach(text => {
+    let td = document.createElement("td");
+    td.innerHTML = text;
+    trow.appendChild(td);
+  });
+  thead.appendChild(trow);
+
+  let progress = params.progress;
+
+  for (var i = 0; i <= progress.length; i++) {
     let trow = document.createElement("tr");
     let progressObj = progress[i];
 
@@ -99,20 +81,19 @@ function createTableWithScore() {
 
     tbody.appendChild(trow);
   }
-
-  return tbody;
+  table.appendChild(thead);
+  table.appendChild(tbody);
+  return table;
 }
 
 function callbackMove(event) {
-  event.preventDefault();
-  let move = event.target.getAttribute("data-move");
-
-  playerMove(move);
+  let playerMove = event.target.getAttribute("data-move");
+  gameRound(playerMove);
 }
 
-function EventToButtons(remove) {
-  for (var i = 0; i < buttons.length; i++) {
-    let self = buttons[i];
+function EventToButtonsMove(remove) {
+  for (var i = 0; i < buttonsMove.length; i++) {
+    let self = buttonsMove[i];
     if (remove) {
       self.removeEventListener("click", callbackMove);
     } else {
@@ -122,15 +103,17 @@ function EventToButtons(remove) {
 }
 
 function resetValue() {
-  let defaultScore = defaultParams.score;
-  let score = { ...defaultScore };
-  params = { ...defaultParams, score, progress: [], errors: [] };
+  params = JSON.parse(JSON.stringify(defaultParams));
 }
 
 function toggleClassDisable() {
-  for (var i = 0; i < buttons.length; i++) {
-    let self = buttons[i];
-    self.classList.toggle("disable");
+  for (var i = 0; i < buttonsMove.length; i++) {
+    let self = buttonsMove[i];
+    if (params.game.start === true) {
+      self.classList.remove("disable");
+    } else {
+      self.classList.add("disable");
+    }
   }
 }
 
@@ -141,67 +124,80 @@ function getRandomNumber(min, max) {
 }
 
 function runModalWithTable() {
-  const tableBody = createTableWithScore();
-  const table = document.querySelector(".table table");
-  table.appendChild(tableBody);
+  const table = createTableWithScore();
+  const tableContainer = document.querySelector(".tableContainer");
+  tableContainer.innerHTML = "";
+
+  tableContainer.appendChild(table);
+
   showModal(null, "#modal-end-game");
 }
+function getResult(winner) {
+  let { player, computer, maxScore } = params;
 
-function getResult(winner, playerMove, computerMove) {
+  switch (winner) {
+    case "player":
+      player.score += 1;
+      break;
+    case "computer":
+      computer.score += 1;
+      break;
+    default:
+      console.log("Draw");
+  }
+
+  if (player.score >= maxScore) endGame("player");
+
+  if (computer.score >= maxScore) endGame("computer");
+
+  return player.score + " - " + computer.score;
+}
+
+function printResult(winner, playerMove, computerMove) {
   let output;
-  if (params.gameEnd) {
-    outputContainer.innerHTML = "Game over, please press the new game button!";
+  let { game, player, computer, rounds } = params;
+
+  if (game.end) {
+    output = "Game over, please press the new game button!";
+    printOutput(output, outputContainer);
+    const table = createTableWithScore();
+    resultContainer.innerHTML = "Rounds: " + rounds;
+    resultContainer.appendChild(table);
     return;
   }
 
   if (winner == "player") {
-    output = params.playerName + " WON: ";
-    params.score.player += 1;
+    output = player.name + " WON: ";
   } else if (winner == "computer") {
     output = "COMPUTER WON: ";
-    params.score.computer += 1;
   } else {
     output = "DRAW: ";
   }
 
   output +=
-    params.playerName +
-    " played " +
-    playerMove +
-    ", computer played " +
-    computerMove;
+    player.name + " played " + playerMove + ", computer played " + computerMove;
 
-  outputContainer.innerHTML = output;
-  resultContainer.innerHTML =
-    params.score.player +
-    " - " +
-    params.score.computer +
-    "<br> Liczba rund: " +
-    params.rounds;
+  result = player.score + " - " + computer.score + "<br> Rounds: " + rounds;
 
-  if (params.score.player >= params.maxScore) {
-    endGame("player");
-  } else if (params.score.computer >= params.maxScore) {
-    endGame("computer");
-  }
-  return params.score.player + " - " + params.score.computer;
+  printOutput(output, outputContainer);
+  printOutput(result, resultContainer);
 }
 
-function getComputerPick() {
-  let Picks = ["rock", "paper", "scissors"];
-  return Picks[getRandomNumber(0, 3)];
+function getComputerMove() {
+  let movements = ["rock", "paper", "scissors"];
+  return movements[getRandomNumber(0, 3)];
 }
 
-function checkRoundWinner(playerPick, computerPick) {
+function checkRoundWinner(playerMove, computerMove) {
   let winner;
 
   if (
-    (playerPick == "rock" && computerPick == "scissors") ||
-    (playerPick == "paper" && computerPick == "rock") ||
-    (playerPick == "scissors" && computerPick == "paper")
+    (playerMove == "rock" && computerMove == "scissors") ||
+    (playerMove == "paper" && computerMove == "rock") ||
+    (playerMove == "scissors" && computerMove == "paper")
   ) {
     winner = "player";
-  } else if (playerPick == computerPick) {
+  } else if (playerMove == computerMove) {
     winner = "draw";
   } else {
     winner = "computer";
@@ -209,34 +205,40 @@ function checkRoundWinner(playerPick, computerPick) {
 
   return winner;
 }
-
-function playerMove(Pick) {
-  let computerMove = getComputerPick();
-
+function addRound(playerMove, computerMove, winner, result) {
   params.rounds++;
-
-  let winner = checkRoundWinner(Pick, computerMove),
-    result = getResult(winner, Pick, computerMove);
-  // console.log(result);
   let roundObj = {
     round: params.rounds,
-    playerMove: Pick,
+    playerMove,
     computerMove,
     winner,
     result
   };
 
   params.progress.push(roundObj);
-  if (params.gameEnd) runModalWithTable();
+}
+
+function gameRound(playerMove) {
+  let computerMove = getComputerMove(),
+    winner = checkRoundWinner(playerMove, computerMove),
+    result = getResult(winner);
+
+  addRound(playerMove, computerMove, winner, result);
+  printResult(winner, playerMove, computerMove);
+
+  if (params.game.end) {
+    runModalWithTable();
+    EventToButtonsMove(true);
+  }
+  // console.log(result);
 }
 
 function startGame() {
   resetValue();
-  const toHowMany = inputMaxScore.value,
-    playerName = inputName.value;
+  const toHowMany = inputMaxScore.value;
 
-  params.playerName = playerName;
-
+  params.player.name = inputName.value;
+  params.game.start = true;
   if (Number.isInteger(parseInt(toHowMany)) && toHowMany > 0) {
     params.maxScore = parseInt(toHowMany);
   } else {
@@ -245,34 +247,31 @@ function startGame() {
     showModal(null, "#modal-error");
     return;
   }
-
   toggleClassDisable();
-  EventToButtons();
+  EventToButtonsMove();
   hideModals();
 }
 
-function resetGame() {
+function newGame() {
   showModal(null, "#modal-new-game");
-  EventToButtons(true);
-
-  outputContainer.innerHTML = "Go!!";
-  resultContainer.innerHTML = "";
+  EventToButtonsMove(true);
+  printOutput("Go!!", outputContainer);
+  printOutput("", resultContainer);
 }
 
 function endGame(winner) {
-  const header = document.querySelector("#modal-end-game header");
-
+  let name = params.player.name.toUpperCase(),
+    message;
   if (winner == "player") {
-    outputContainer.innerHTML = params.playerName + " WON THE ENTIRE GAME!!!";
-    header.innerHTML = params.playerName + " WON THE ENTIRE GAME!!!";
+    message = name + " WON THE ENTIRE GAME!!!";
+    printOutput(message, outputContainer);
+    printOutput(message, headerEndGame);
   } else {
-    outputContainer.innerHTML = params.playerName + " LOST THE ENTIRE GAME!!!";
-    header.innerHTML = params.playerName + " LOST THE ENTIRE GAME!!!";
+    message = name + " LOST THE ENTIRE GAME!!!";
+    printOutput(message, outputContainer);
+    printOutput(message, headerEndGame);
   }
-
+  params.game.end = true;
+  params.game.start = false;
   toggleClassDisable();
-  params.gameEnd = true;
 }
-
-startGameButton.addEventListener("click", startGame);
-newGameButton.addEventListener("click", resetGame);

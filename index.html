@@ -33,20 +33,7 @@
       <div class="modal show" id="modal-end-game">
         <a href="#" class="close">x</a>
         <header></header>
-        <div class="table">
-          <table>
-            <thead>
-              <tr>
-                <td>Runda</td>
-                <td>Gracz</td>
-                <td>Komputer</td>
-                <td>Zwycięzca</td>
-                <td>Wynik</td>
-              </tr>
-            </thead>
-            <tbody></tbody>
-          </table>
-        </div>
+        <div class="tableContainer"></div>
         <div class="content">
           <p></p>
         </div>
@@ -56,9 +43,19 @@
         <header>Start Game</header>
         <div class="content">
           <p>
-            <input id="playerName" type="text" />
+            <label for="playerName">
+              <input id="playerName" type="text" placeholder="Player name" />
+            </label>
           </p>
-          <p><input id="maxScore" type="number" /></p>
+          <p>
+            <label for="maxScore">
+              <input
+                id="maxScore"
+                type="number"
+                placeholder="Number of Round"
+              />
+            </label>
+          </p>
           <button id="startGame">Start</button>
         </div>
       </div>
@@ -71,6 +68,7 @@
       </div>
     </div>
     <!-- <a href="#modal-one" class="show-modal">Show modal one</a> -->
+    <script src="js/modal.js"></script>
     <script src="js/script.js"></script>
   </body>
 </html>
